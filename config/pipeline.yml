@@ -1,0 +1,42 @@
+pipeline:
+  name: DoeEcommercePipeline
+  schedule: "0 0 * * *" # Daily at midnight
+  timezone: ${TIMEZONE}
+
+layers:
+  bronze:
+    load_type: append
+    validation:
+      enforce_schema: true
+      allow_nulls: true
+
+  silver:
+    load_type: incremental
+    deduplication: true
+    deduplication_key: id
+
+  gold:
+    load_type: overwrite
+    marts:
+      - finance
+      - sales
+      - operations
+
+  departments:
+    finance:
+      kpis:
+        - total_revenue
+        - daily_revenue
+        - average_order_value
+      
+    sales:
+      kpis:
+        - total_orders
+        - top_products
+        - customer_count
+    
+
+    operations:
+      kpis:
+        - order_fulfillment_rate
+        - cart_abandonment_rate

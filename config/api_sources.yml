@@ -1,0 +1,29 @@
+sources:
+  fakestore:
+    base_url: ${FAKESTORE_API}
+    endpoints:
+      products: /products
+      # orders: /orders
+      users: /users
+    pagination: false
+    refresh_type: full
+
+  dummyjson:
+    base_url: ${DUMMYJSON_API}
+    endpoints:
+      products: /products
+      carts: /carts
+      users: /users
+    pagination: true
+    page_param: skip
+    limit_param: limit
+    page_size: 100
+    refresh_type: incremental
+    incremental_field: updatedAt
+
+  randomuser:
+    base_url: ${RANDOMUSER_API}
+    endpoints:
+      users: /
+    pagination: false
+    refresh_type: full

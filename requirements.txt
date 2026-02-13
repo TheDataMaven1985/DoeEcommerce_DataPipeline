@@ -1,0 +1,29 @@
+python-dotenv==1.0.1
+requests==2.31.0
+pandas==2.2.1
+numpy==1.26.4
+
+# Database connectivity
+SQLAlchemy==2.0.25
+psycopg2-binary==2.9.9     # PostgreSQL
+mysql-connector-python==8.3.0
+
+# Data Transformation
+pyarrow==15.0.0
+fastparquet==2024.2.0
+
+# Orchestration
+# apache-airflow==2.8.1
+# pendulum==3.0.0
+
+# Data Quality
+great-expectations==0.18.12
+
+# Logging & Monitoring
+loguru==0.7.2
+
+# Testing
+pytest==8.0.0
+
+# Dev Tools
+pytest==8.0.0
