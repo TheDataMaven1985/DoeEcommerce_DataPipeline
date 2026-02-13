@@ -1,0 +1,15 @@
+database:
+  type: postgres
+
+  postgres:
+    host: ${DB_HOST}
+    port: ${DB_PORT}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    database_name: ${DB_NAME}
+
+  schemas:
+    bronze: bronze
+    silver: silver
+    gold: gold
+    audit: audit
