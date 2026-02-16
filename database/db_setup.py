@@ -254,7 +254,7 @@ class DatabaseSetup:
             total_revenue DECIMAL(15, 2),
             daily_revenue DECIMAL(15, 2),
             average_order_value DECIMAL(15, 2),
-            order_count INTEGER,
+            carts_count INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -267,7 +267,7 @@ class DatabaseSetup:
         CREATE TABLE IF NOT EXISTS gold.sales_mart (
             mart_id SERIAL PRIMARY KEY,
             date DATE NOT NULL UNIQUE,
-            total_orders INTEGER,
+            total_carts INTEGER,
             top_products VARCHAR(500),
             customer_count INTEGER,
             product_count INTEGER,
@@ -339,58 +339,55 @@ class DatabaseSetup:
         return True
     
     def create_views(self) -> bool:
-        """Create useful views."""
+        """Create useful views (Cart-centric for order-independence)."""
         logger.info("\n Creating views...")
         
-        # Daily revenue view
+        # Daily revenue view - Focuses on potential revenue from carts instead of orders for more real-time insights
         daily_revenue_view = """
         CREATE OR REPLACE VIEW gold.vw_daily_revenue AS
         SELECT
-            CAST(o.last_updated AS DATE) as order_date,
-            COUNT(*) as total_orders,
-            SUM(COALESCE(c.total_value, 0)) as total_revenue,
-            AVG(COALESCE(c.total_value, 0)) as avg_order_value,
-            COUNT(DISTINCT o.user_id) as unique_customers
-        FROM silver.orders o
-        LEFT JOIN silver.carts c ON o.user_id = c.user_id
-        GROUP BY CAST(o.last_updated AS DATE)
-        ORDER BY order_date DESC;
+            CAST(last_updated AS DATE) as activity_date,
+            COUNT(cart_id) as total_carts,
+            SUM(COALESCE(total_value, 0)) as potential_revenue,
+            AVG(COALESCE(total_value, 0)) as avg_cart_value,
+            COUNT(DISTINCT user_id) as unique_shoppers
+        FROM silver.carts
+        GROUP BY CAST(last_updated AS DATE)
+        ORDER BY activity_date DESC;
         """
         
-        # Product popularity view
+        # catalog view
         product_popularity_view = """
-        CREATE OR REPLACE VIEW gold.vw_product_popularity AS
+        CREATE OR REPLACE VIEW gold.vw_product_catalog AS
         SELECT
-            p.product_id,
-            p.title,
-            p.category,
-            0 as order_count,
-            p.price as avg_price,
-            0 as total_value
-        FROM silver.products p
-        ORDER BY p.price DESC;
+            category,
+            COUNT(*) as product_count,
+            MIN(price) as min_price,
+            MAX(price) as max_price,
+            AVG(price) as avg_category_price
+        FROM silver.products
+        GROUP BY category;
         """
         
-        # User activity view
+        # Uses silver.carts for engagement tracking
         user_activity_view = """
         CREATE OR REPLACE VIEW gold.vw_user_activity AS
         SELECT
             u.user_id,
             u.email,
             u.full_name,
-            COUNT(DISTINCT o.order_id) as total_orders,
-            COUNT(DISTINCT c.cart_id) as total_carts,
-            MAX(CAST(o.last_updated AS DATE)) as last_order_date
+            COUNT(DISTINCT c.cart_id) as total_carts_created,
+            SUM(COALESCE(c.total_value, 0)) as total_intent_value,
+            MAX(c.last_updated) as last_active_at
         FROM silver.users u
-        LEFT JOIN silver.orders o ON u.user_id = o.user_id
         LEFT JOIN silver.carts c ON u.user_id = c.user_id
         GROUP BY u.user_id, u.email, u.full_name
-        ORDER BY total_orders DESC;
+        ORDER BY total_intent_value DESC;
         """
         
         views = [
             ('vw_daily_revenue', daily_revenue_view),
-            ('vw_product_popularity', product_popularity_view),
+            ('vw_product_catalog', product_popularity_view),
             ('vw_user_activity', user_activity_view),
         ]
         
@@ -398,9 +395,7 @@ class DatabaseSetup:
             if self.execute(view_query):
                 logger.info(f" Created view 'gold.{view_name}'")
             else:
-                logger.error(f" Failed to create view 'gold.{view_name}'")
                 return False
-        
         return True
     
     def setup_complete(self) -> bool:
