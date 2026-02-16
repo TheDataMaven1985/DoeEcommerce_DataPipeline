@@ -57,7 +57,7 @@ class BackfillRunner:
         self.engine = self._create_engine()
         self.audit = AuditWriter(self.engine)
 
-    def _load_config(self):  # FIXED: Added self parameter
+    def _load_config(self):
         """Load configuration files."""
 
         config = {}
